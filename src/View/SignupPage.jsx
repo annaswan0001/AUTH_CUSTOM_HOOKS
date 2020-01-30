@@ -1,109 +1,148 @@
-import React from "react";
-import { useSignUpForm } from "../customHooks/customHooks";
+import React, {useState, useEffect, useCallback, useRef} from "react";
+import { useSignUpForm } from "../customHooks/signUpHook";
 import timezones from "../timezones/timezons";
 import _ from "lodash";
+import classNames from "classnames/bind";
+import TextField from "../Сomponents/TextField";
+import {useFetchData} from '../customHooks/fetchHook'
+import { useHistory } from "react-router-dom";
+import validateInput from '../utils/utils'
+import axios from 'axios'
 
-const SignUp = () => {
-  const onSignUp = () => {
-    alert(
-      `User Created! Name: ${inputs.firstName} ${inputs.lastName} Email: ${inputs.email}`
-    );
-  };
+const SignUpPage = () => {
+  let history = useHistory();
+  
+  const [errors, setError] = useState({});
+  const redirectToHomePage = ()=>history.push('/')
 
-  const { inputs, handleInputChange, handleSubmit } = useSignUpForm(onSignUp);
+  const [res, apiMethod] = useFetchData({url: 'https://jsonplaceholder.typicode.com/posts', payload: {
+    title: 'foo',
+    body: 'bar',
+    userId: 1
+  }},redirectToHomePage)
 
-  const options = _.map(timezones, (val, opt) => {
+  const isValid = () =>{
+    const { errors, isValid } = validateInput(inputs);
+    console.log(isValid,"isValid")
+    if (!isValid) {
+      setError(errors)
+    }
+    return isValid;
+  }
+
+  const setUserDataForRequest = ()=>{
+    if (isValid()){
+      setUserData(inputs)
+      apiMethod()
+      // setError(res.error);
+    }
+  }
+
+  const {
+    inputs,
+    loading,
+    handleInputChange,
+    handleSubmit,
+  } = useSignUpForm(setUserDataForRequest);
+
+
+const [userData, setUserData] = useState([])
+const [isLoading, setIsLoading] = useState(false);
+const [isError, setIsError] = useState(false);
+const [isSending, setIsSending] = useState(false)
+const isMounted = useRef(true)
+
+  const options = _.map(timezones, (val, key) => {
     return (
       <option key={val} value={val}>
-        {opt}
+        {key}
       </option>
     );
   });
 
-  return (
-    <form onSubmit={handleSubmit}>
-      <h3>Sign Up</h3>
 
-      <div className="form-group">
-        <label>First name</label>
-        <input
+
+
+
+  return (
+    <React.Fragment>
+      {errors.length > 0 && <div>{errors}</div>}
+      <form onSubmit={handleSubmit}>
+        <h3>Sign Up</h3>
+
+        <TextField
           name="firstName"
           onChange={handleInputChange}
-          value={inputs.firstName || ""}
+          value={inputs.firstName}
           type="text"
-          className="form-control"
           placeholder="First name"
+          label="First name"
+          error={errors.firstName}
         />
-      </div>
-
-      <div className="form-group">
-        <label>Last name</label>
-        <input
+        <TextField
           name="lastName"
           onChange={handleInputChange}
-          value={inputs.lastName || ""}
+          value={inputs.lastName}
           type="text"
-          className="form-control"
           placeholder="Last name"
+          label="Last name"
+          error={errors.lastName}
         />
-      </div>
-
-      <div className="form-group">
-        <label>Email address</label>
-        <input
+        <TextField
           name="email"
           onChange={handleInputChange}
-          value={inputs.email || ""}
-          className="form-control"
-          placeholder="Enter email"
+          value={inputs.email}
+          type="text"
+          placeholder="email"
+          label="Email"
+          error={errors.email}
         />
-      </div>
-
-      <div className="form-group">
-        <label>Password</label>
-        <input
+        <TextField
           name="password1"
           onChange={handleInputChange}
-          value={inputs.password1 || ""}
-          className="form-control"
-          placeholder="Enter password"
+          value={inputs.password1}
+          type="text"
+          placeholder="Password"
+          label="Password"
+          error={errors.password1}
         />
-      </div>
-      <div className="form-group">
-        <label>Password</label>
-        <input
-          type="password"
+        <TextField
           name="password2"
           onChange={handleInputChange}
-          value={inputs.password2 || ""}
-          className="form-control"
-          placeholder="Enter password"
+          value={inputs.password2}
+          type="text"
+          placeholder="Password confirmation"
+          label="Password"
+          error={errors.password2}
         />
-      </div>
 
-      <div className="form-group">
-        <label>TimeZone</label>
-
-        <select
-          name="timezone"
-          onChange={handleInputChange}
-          value={inputs.timezone || ""}
-          className="form-control"
+        <div
+          className={classNames("form-group", { "has-error": errors.timezone })}
         >
-          <option value="" disabled>
-            Choose your timezone
-          </option>
-          {options}
-        </select>
-      </div>
+          <label>TimeZone</label>
 
-      <button type="submit" className="btn btn-primary btn-block">
-        Sign Up
-      </button>
-      <p className="forgot-password text-right">
-        Already registered <a href="#">sign in?</a>
-      </p>
-    </form>
+          <select
+            name="timezone"
+            onChange={handleInputChange}
+            value={inputs.timezone}
+            className="form-control"
+          >
+            <option value="" disabled>
+              Choose your timezone
+            </option>
+            {options}
+          </select>
+          {errors.timezone && <span>{errors.timezone}</span>}
+        </div>
+
+        <button type="submit" className="btn btn-primary btn-block">
+          Sign Up
+        </button>
+
+        {loading && <div style={{ color: "red" }}>Loading...</div>}
+      </form>
+    </React.Fragment>
   );
 };
-export default SignUp;
+
+export default SignUpPage;
